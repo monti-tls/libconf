@@ -82,25 +82,29 @@ int main()
 {
     using namespace json;
     
+    // Set up the JSON input stream (one can use any std::istream).
     std::string val =
     "{\n"
     "   \"a\" : 123,\n"
     "   \"p\" : [1, \"yolo\"]\n"
     "}"
     ;
-    
     std::istringstream ss;
     ss.str(val);
     
+    // The variables that we will update w/ the configuration.
     int a;
     std::pair<int, std::string> p;
     
+    // Create the template.
     Template tpl = Template()
     .bind("a", a)
     .bind("p", p);
     
+    // Match the template and extract conf data from the stream.
     json::extract(tpl, ss);
     
+    // Verify that everything is OK :)
     std::cout << a << std::endl;
     std::cout << p.first << ", " << p.second << std::endl;
     

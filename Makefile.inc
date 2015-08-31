@@ -1,6 +1,6 @@
 ## Compilation options
 CXX=g++
-CXXFLAGS=-Wall -Wextra -std=gnu++11
+CXXFLAGS=-fPIC -Wall -Wextra -std=gnu++11
 LDFLAGS=
 RELEASE_FLAGS=-O3
 DEBUG_FLAGS=-DDEBUG -g
@@ -10,9 +10,10 @@ SOURCE_DIR=src
 INCLUDE_DIR=include
 BUILD_DIR=build
 BIN_DIR=bin
+TEST_DIR=test
 
 ## Products setup
-PRODUCT=test
+PRODUCT=conf
 
 ## Colors definitions
 red=`tput setaf 1`
@@ -29,5 +30,5 @@ ifeq ($(release),1)
 else
 	CXXFLAGS+=$(DEBUG_FLAGS)
 endif
-BINARY=$(BIN_DIR)/$(PRODUCT)
-
+BINARY=$(BIN_DIR)/lib$(PRODUCT).a
+BINARY_LINK_FLAGS=-L$(BIN_DIR) -l$(PRODUCT)

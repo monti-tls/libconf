@@ -25,7 +25,9 @@ Parser::Parser(int argc, char** argv) :
     
     std::ostringstream ss;
     for (int i = 1; i < argc; ++i)
-        ss << argv[i];
+        ss << argv[i] << " ";
+    
+    m_in.str(ss.str());
 }
 
 Parser::~Parser()
@@ -99,6 +101,120 @@ bool Parser::exists(std::string const& longName) const
 void Parser::parse()
 {
     m_values.clear();
+    m_arguments.size();
+    
+    M_get();
+    M_skip();
+    
+    while (m_nextChar == '-')
+    {
+        M_get();
+        
+        int shortName = -1;
+        std::string longName = "";
+        Option* option = 0;
+        
+        // Long name case
+        if (m_nextChar == '-')
+        {
+            M_get();
+            
+            while (!std::isspace(m_nextChar) && m_nextChar > 0)
+                longName += M_get();
+            
+            option = find(longName);
+        }
+        // Short name case
+        else
+        {
+            shortName = M_get();
+            option = find(shortName);
+        }
+        
+        // The error string, just in case :)
+        std::ostringstream errss;
+        errss << "cli::Parser::parse: option `-";
+        if (shortName >= 0)
+            errss << (char) shortName;
+        else
+            errss << "-" << longName;
+        errss << "' ";
+        
+        // The option is not defined
+        if (!option)
+        {
+            errss << "is not defined";
+            throw std::logic_error(errss.str());
+        }
+        
+        // The option was already defined
+        if (has(option))
+        {
+            errss << "is set multiple times";
+            throw std::logic_error(errss.str());
+        }
+        
+        // Get the option value, if needed
+        std::string value = "";
+        if (option->valued())
+        {
+            M_skip();
+            while (!std::isspace(m_nextChar) && m_nextChar > 0)
+                value += M_get();
+        }
+        
+        // Skip some whitespace
+        M_skip();
+        
+        // Value is mandatory !
+        if (!value.size() && option->valued())
+        {
+            errss << "must have a value";
+            throw std::logic_error(errss.str());
+        }
+        
+        // Skip some whitespace again
+        M_skip();
+        
+        // Register option and value
+        m_values[option] = value;
+    }
+    
+    // Check for required options
+    std::set<Option*>::iterator it = m_options.begin();
+    for(; it != m_options.end(); ++it)
+    {
+        Option* option = *it;
+        if (option->required() && !has(option))
+        {
+            std::ostringstream errss;
+            errss << "cli::Parser::parse: option `";
+            if (option->shortName() > 0)
+                errss << "-" << (char) option->shortName();
+            if (option->longName().size())
+            {
+                if (option->shortName() > 0)
+                    errss << ", ";
+                errss << "--" << option->longName();
+            }
+            errss << "' is required but not set";
+            
+            throw std::logic_error(errss.str());
+        }
+    }
+    
+    // Read in arguments
+    while (m_nextChar > 0)
+    {
+        M_skip();
+        
+        std::string argument = "";
+        while (!std::isspace(m_nextChar) && m_nextChar > 0)
+            argument += M_get();
+        
+        if(argument.size())
+            m_arguments.push_back(argument);
+    }
 }
 
 bool Parser::has(char shortName) const
@@ -138,6 +254,9 @@ std::string Parser::value(Option* opt) const
     
     return "";
 }
+
+std::vector<std::string> const& Parser::arguments() const
+{ return m_arguments; }
 
 void Parser::showHelp(std::ostream& out) const
 {
@@ -183,4 +302,17 @@ void Parser::showHelp(std::ostream& out) const
         
         out << std::endl;
     }
+}
+
+int Parser::M_get()
+{
+    int ch = m_nextChar;
+    m_nextChar = m_in.get();
+    return ch;
+}
+
+void Parser::M_skip()
+{
+    while (std::isspace(m_nextChar))
+        M_get();
 }

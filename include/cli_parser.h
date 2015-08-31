@@ -22,46 +22,83 @@
 #include <sstream>
 #include <set>
 #include <map>
+#include <vector>
 #include <iostream>
 
 namespace cli
 {
+    //! A CLI option string parser.
+    //! It works with a given set of switches (non-valued options)
+    //!   and valued options (simply referred to as options).
+    //! One can set the program description (or not), and generate an
+    //!   automatic help message using showHelp().
+    //! The command line option string can have the following form :
+    //!   commandName [options] [arguments]
+    //! Where arguments are whitespace-separated.
     class Parser
     {
     public:
+        //! Create a CLI parser from main() arguments.
         Parser(int argc, char** argv);
         ~Parser();
         
+        //! Set the program description for the help message (optional).
         void setProgramDescription(std::string const& description);
+        //! Get the program description.
         std::string const& programDescription() const;
         
+        //! Add a switch (e.g. non-valued) option to this parser.
         Option& addSwitch(char shortName, std::string const& longName = "");
+        //! Add a valued option to this parser.
         Option& addOption(char shortName, std::string const& longName = "");
         
+        //! Find an option by short name.
         Option* find(char shortName) const;
+        //! Find an option by long name.
         Option* find(std::string const& longName) const;
         
+        //! Check whether an option exists by its short name.
         bool exists(char shortName) const;
+        //! Check whether an option exists by its long name.
         bool exists(std::string const& longName) const;
         
+        //! Parse the given CLI options.
         void parse();
         
+        //! Check if an option was given in the CLI string by short name.
         bool has(char shortName) const;
+        //! Check if an option was given in the CLI string by long name.
         bool has(std::string const& longName) const;
+        //! Check if an option was given in the CLI string by value.
         bool has(Option* opt) const;
         
+        //! Get the option value by short name.
         std::string value(char shortName) const;
+        //! Get the option value by long name.
         std::string value(std::string const& longName) const;
+        //! Get the option value by value name.
         std::string value(Option* opt) const;
         
+        //! Get the CLI arguments vector.
+        std::vector<std::string> const& arguments() const;
+        
+        //! Generate the help message to the given stream.
         void showHelp(std::ostream& out = std::cout) const;
+        
+    private:
+        void M_skip();
+        int M_get();
         
     private:
         std::string m_programName;
         std::string m_programDescription;
+        
         std::istringstream m_in;
+        int m_nextChar;
+        
         std::set<Option*> m_options;
         std::map<Option*, std::string> m_values;
+        std::vector<std::string> m_arguments;
     };
 }
 

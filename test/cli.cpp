@@ -22,13 +22,27 @@ int main(int argc, char** argv)
     using namespace cli;
     
     Parser parser(argc, argv);
-    parser.addOption('a', "aaaa").setDescription("example description");
-    parser.addSwitch('b', "").setDescription("another description");
-    parser.addOption('c', "cc");
-    parser.addSwitch('d', "dd");
+    Option& a = parser.addOption('a', "aaaa").setDescription("example description");
+    Option& b = parser.addSwitch('b').setDescription("another description");
+    Option& c = parser.addOption('c', "cc").setRequired();
+    Option& d = parser.addSwitch('d', "dd");
     parser.setProgramDescription("My funny program !");
     
-    parser.showHelp();
+    // parser.showHelp();
+    
+    parser.parse();
+    
+    if (parser.has(&a))
+        std::cout << "a = " << parser.value(&a) << std::endl;
+    if (parser.has(&b))
+        std::cout << "b = " << parser.value(&b) << std::endl;
+    if (parser.has(&c))
+        std::cout << "c = " << parser.value('c') << std::endl;
+    if (parser.has(&d))
+        std::cout << "d = " << parser.value("dd") << std::endl;
+    
+    for (unsigned int i = 0; i < parser.arguments().size(); ++i)
+        std::cout << "arg #" << i << " = " << parser.arguments()[i] << std::endl;
 
     return 0;
 }

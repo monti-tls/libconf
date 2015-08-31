@@ -21,23 +21,40 @@
 
 namespace cli
 {
+    //! A class representing a command-line (CLI) option.
+    //! An option can have a short name (e.g. -c) and/or a long
+    //!   name (e.g. --long-name).
+    //! The description is used in the auto-generated help.
+    //! Options can take a value (e.g., are valued), and
+    //!   can be required to start the program.
     class Option
     {
     public:
+        //! Create an option with a given short name, long name and properties.
         Option(char shortName, std::string const& longName, bool valued);
         ~Option();
         
-        void setDescription(std::string const& description);
+        //! Set the help description for this option.
+        Option& setDescription(std::string const& description);
+        //! Set this option required.
+        Option& setRequired(bool required = true);
         
+        //! Get the short name of this option.
         char shortName() const;
+        //! Get the long name of this option.
         std::string const& longName() const;
+        //! Returns whether or not this option takes a value.
         bool valued() const;
+        //! Returns whether or not this option is mandatory.
+        bool required() const;
+        //! Returns the help description of this option.
         std::string const& description() const;
         
     private:
         char m_shortName;
         std::string m_longName;
         bool m_valued;
+        bool m_required;
         std::string m_description;
     };
 }

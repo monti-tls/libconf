@@ -22,14 +22,24 @@ Option::Option(char shortName, std::string const& longName, bool valued) :
     m_shortName(shortName),
     m_longName(longName),
     m_valued(valued),
+    m_required(false),
     m_description("")
 {}
 
 Option::~Option()
 {}
 
-void Option::setDescription(std::string const& description)
-{ m_description = description; }
+Option& Option::setDescription(std::string const& description)
+{
+    m_description = description;
+    return *this;
+}
+
+Option& Option::setRequired(bool required)
+{
+    m_required = required;
+    return *this;
+}
 
 char Option::shortName() const
 { return m_shortName; }
@@ -39,6 +49,9 @@ std::string const& Option::longName() const
 
 bool Option::valued() const
 { return m_valued; }
+
+bool Option::required() const
+{ return m_required; }
 
 std::string const& Option::description() const
 { return m_description; }

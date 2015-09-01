@@ -18,6 +18,18 @@
 
 using namespace json;
 
+// Abstract node class
+std::string Node::typeName(Node::Type type)
+{
+    if (type == Number) return "Number";
+    else if (type == Boolean) return "Boolean";
+    else if (type == String) return "String";
+    else if (type == Object) return "Object";
+    else if (type == Array) return "Array";
+    
+    return "?";
+}
+
 // Numeric value node
 
 NumberNode::NumberNode(float value) :
@@ -103,13 +115,13 @@ size_t ArrayNode::size() const
 
 Node*& ArrayNode::at(size_t i)
 {
-    if (i >= m_impl.size()) throw std::domain_error("ArrayNode::at: index out of bounds");
+    if (i >= m_impl.size()) throw std::domain_error("json::ArrayNode::at: index out of bounds");
     return m_impl[i];
 }
 
 Node* ArrayNode::at(size_t i) const
 {
-    if (i >= m_impl.size()) throw std::domain_error("ArrayNode::at: index out of bounds");
+    if (i >= m_impl.size()) throw std::domain_error("json::ArrayNode::at: index out of bounds");
     return m_impl[i];
 }
 

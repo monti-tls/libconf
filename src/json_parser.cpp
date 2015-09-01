@@ -152,7 +152,7 @@ Node* Parser::M_array()
 void Parser::M_error(Token const& at, std::string const& msg)
 {
     std::ostringstream ss;
-    ss << "json::Parser: [" << at.info().line
+    ss << "json::Parser::M_error: [" << at.info().line
        << ":" << at.info().column << "]"
        << ": " << msg;
     

@@ -217,6 +217,11 @@ void Parser::parse()
     }
 }
 
+std::string const& Parser::programName() const
+{
+    return m_programName;
+}
+
 bool Parser::has(char shortName) const
 {
     return has(find(shortName));

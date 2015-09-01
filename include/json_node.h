@@ -47,6 +47,7 @@ namespace json
     public:
         virtual ~Node() {}
         virtual Type type() const = 0;
+        static std::string typeName(Type type);
         
         template <typename T>
         T* downcast()

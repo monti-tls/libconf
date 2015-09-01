@@ -34,7 +34,7 @@ Object::~Object()
 void Object::bind(std::string const& name, Element* elem)
 {
     if (m_elements.find(name) != m_elements.end())
-        throw std::logic_error("json::Object: element `" + name + "' is already bound");
+        throw std::logic_error("json::Object::bind: element `" + name + "' is already bound");
     
     ++elem->refs;
     m_elements[name] = elem;
@@ -46,14 +46,14 @@ Element::Type Object::type() const
 void Object::extract(Node* node) const
 {
     if (node->type() != Node::Object)
-        throw Exception(node, "json::Object: type mismatch");
+        throw Exception(node, "json::Object::extract: type mismatch");
     ObjectNode* obj = node->downcast<ObjectNode>();
     
     for (std::map<std::string, Element*>::const_iterator it = m_elements.begin();
          it != m_elements.end(); ++it)
     {
         if (!obj->exists(it->first))
-            throw Exception(node, "json::Object: missing element `" + it->first + "'");
+            throw Exception(node, "json::Object::extract: missing element `" + it->first + "'");
         
         it->second->extract(obj->get(it->first));
     }
@@ -94,13 +94,13 @@ Element::Type Array::type() const
 void Array::extract(Node* node) const
 {
     if (node->type() != Node::Array)
-        throw Exception(node, "json::Array: type mismatch");
+        throw Exception(node, "json::Array::extract: type mismatch");
     ArrayNode* arr = node->downcast<ArrayNode>();
     
     for (unsigned int i = 0; i < m_elements.size(); ++i)
     {
         if (i >= arr->size())
-            throw Exception(node, "json::Array: size mismatch in array");
+            throw Exception(node, "json::Array::extract: size mismatch in array");
         
         m_elements[i]->extract(arr->at(i));
     }
@@ -145,7 +145,7 @@ Template& Template::operator=(Template const& cpy)
 Template& Template::bind(std::string const& name, Template const& tpl)
 {
     if (m_impl && m_impl->type() != Element::Object)
-        throw std::logic_error("json::Template: template is already bound");
+        throw std::logic_error("json::Template::bind: template is already bound");
     
     if (!m_impl)
         m_impl = new Object();
@@ -157,7 +157,7 @@ Template& Template::bind(std::string const& name, Template const& tpl)
 Template& Template::bind_array(Template const& tpl)
 {
     if (m_impl && m_impl->type() != Element::Array)
-        throw std::logic_error("json::Template: template is already bound");
+        throw std::logic_error("json::Template::bind_array: template is already bound");
     
     if (!m_impl)
         m_impl = new Array();
@@ -169,7 +169,7 @@ Template& Template::bind_array(Template const& tpl)
 void Template::extract(Node* node) const
 {
     if (!m_impl)
-        throw Exception(node, "json::Template: template is not bound !");
+        throw Exception(node, "json::Template::extract: template is not bound !");
     
     m_impl->extract(node);
 }
@@ -177,7 +177,7 @@ void Template::extract(Node* node) const
 Node* Template::synthetize() const
 {
     if (!m_impl)
-        throw std::logic_error("json::Template: template is not bound !");
+        throw std::logic_error("json::Template::synthetize: template is not bound !");
     
     return m_impl->synthetize();
 }

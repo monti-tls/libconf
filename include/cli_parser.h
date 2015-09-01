@@ -65,6 +65,9 @@ namespace cli
         //! Parse the given CLI options.
         void parse();
         
+        //! Get the program name, as invoked from the command line.
+        std::string const& programName() const;
+        
         //! Check if an option was given in the CLI string by short name.
         bool has(char shortName) const;
         //! Check if an option was given in the CLI string by long name.

@@ -72,7 +72,7 @@ namespace json
         { return Element::Scalar; }
         
         void extract(Node* node)
-        { throw Exception(node, "json::Terminal: direct extraction is not supported for this type"); }
+        { throw Exception(node, "json::Terminal::extract: direct extraction is not supported for this type"); }
         
         Node* synthetize() const
         { return 0; }
@@ -93,7 +93,7 @@ namespace json
         void extract(Node* node) const
         {
             if (node->type() != tp)
-                throw Exception(node, "json::Scalar: type mismatch");
+                throw Exception(node, "json::Scalar::extract: expecting a node of type " + Node::typeName(tp));
             m_ref = node->downcast<N>()->value();
         }
         
@@ -119,7 +119,7 @@ namespace json
         void extract(Node* node) const
         {
             if (node->type() != Node::Array)
-                throw Exception(node, "json::Vector: type mismatch");
+                throw Exception(node, "json::Vector::extract: expecting an array node");
             
             ArrayNode* arr = node->downcast<ArrayNode>();
             
@@ -164,7 +164,7 @@ namespace json
         void extract(Node* node) const
         {
             if (node->type() != Node::Object)
-                throw Exception(node, "json::Map: type mismatch");
+                throw Exception(node, "json::Map::extract: expecting an object node");
             
             ObjectNode* obj = node->downcast<ObjectNode>();
             
@@ -309,7 +309,7 @@ namespace json
         template <typename T>
         Template& bind(T& ref)
         {
-            if (m_impl) throw std::logic_error("json::Template: template is already bound");
+            if (m_impl) throw std::logic_error("json::Template::bind: template is already bound");
             m_impl = new Terminal<T>(ref);
             return *this;
         }

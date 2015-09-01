@@ -110,6 +110,12 @@ int main()
         std::cout << "a = " << a << std::endl;
         std::cout << "pair = (" << p.first << ", " << p.second << ")" << std::endl;
     }
+    catch(Exception const& exc)
+    {
+        // Here you can retrieve the offending node :
+        Node* offending = exc.node();
+        std::cerr << "Exception:[" << offending << "]\n\t" << exc.what() << std::endl;
+    }
     catch(std::exception const& exc)
     {
         std::cerr << "Exception:\n\t" << exc.what() << std::endl;

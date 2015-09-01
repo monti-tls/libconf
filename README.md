@@ -10,32 +10,32 @@ Here is a simple JSON configuration file loading sample :
 
 ```JSON
 {
-        "a" : 123,
-        "b" : [ true, false ]
+    "a" : 123,
+    "b" : [ true, false ]
 }
 ```
 
 ```C++
-    // We will read those variables from the file
-    int a;
-    std::vector<bool> b;
+// We will read those variables from the file
+int a;
+std::vector<bool> b;
 
-    // We construct the conf. file template and bind
-    //   variables to it.
-    json::Template tpl;
-    tpl.bind("a", a)
-       .bind("b", b);
-    
-    // Read file
-    json::extract(tpl, "conf.json");
-    
-    // At this point a and b were loaded from the file :)
-    // If you wish to modify them and save the conf. again :
-    
-    a = 314169;
-    b.push_back(false);
-    
-    json::synthetize(tpl, "conf.json");
+// We construct the conf. file template and bind
+//   variables to it.
+json::Template tpl;
+tpl.bind("a", a)
+   .bind("b", b);
+
+// Read file
+json::extract(tpl, "conf.json");
+
+// At this point a and b were loaded from the file :)
+// If you wish to modify them and save the conf. again :
+
+a = 314169;
+b.push_back(false);
+
+json::synthetize(tpl, "conf.json");
 ```
 
 Commented test files are presented in the test/ directory.
@@ -48,13 +48,14 @@ make run-json
 ```
 The test executables resides in bin/.
 
-libconf also features a command-line arguments and options parser very simple to use,
-and that will probably be improved again in the near future.
-See test/cli.cpp for more usage information.
+libconf also features a command-line arguments and options parser very simple to use.
+It can generate an automatic help message, and can handle valued/switch options, required
+options and arguments.
+See test/cli.cpp for a detailled example.
 
 ## Building
 
-libconf uses a very simple GNU Make system, so just type in
+libconf uses a very simple GNU Makefile, so just type in
 
 ```shell
 make

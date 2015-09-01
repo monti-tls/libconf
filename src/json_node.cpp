@@ -51,7 +51,7 @@ float NumberNode::value() const
 void NumberNode::M_serialize(std::ostream& out, int level, bool indent) const
 {
     std::string pre = "";
-    for (int i = 0; i < level; ++i) pre += " ";
+    for (int i = 0; indent && i < level; ++i) pre += " ";
     
     out << pre << m_value;
 }
@@ -76,7 +76,7 @@ bool BooleanNode::value() const
 void BooleanNode::M_serialize(std::ostream& out, int level, bool indent) const
 {
     std::string pre = "";
-    for (int i = 0; i < level; ++i) pre += " ";
+    for (int i = 0; indent && i < level; ++i) pre += " ";
     
     out << pre << (m_value ? "true" : "false");
 }
@@ -101,7 +101,7 @@ std::string const& StringNode::value() const
 void StringNode::M_serialize(std::ostream& out, int level, bool indent) const
 {
     std::string pre = "";
-    for (int i = 0; i < level; ++i) pre += " ";
+    for (int i = 0; indent && i < level; ++i) pre += " ";
     
     out << pre << '"';
     for (unsigned int i = 0; i < m_value.size(); ++i)
@@ -153,7 +153,7 @@ std::map<std::string, Node*> const& ObjectNode::impl() const
 void ObjectNode::M_serialize(std::ostream& out, int level, bool indent) const
 {
     std::string pre = "";
-    for (int i = 0; i < level; ++i) pre += " ";
+    for (int i = 0; indent && i < level; ++i) pre += " ";
     
     out << pre << '{';
     if (indent) out << std::endl;
@@ -174,6 +174,8 @@ void ObjectNode::M_serialize(std::ostream& out, int level, bool indent) const
             it->second->M_serialize(out, 0, false);
         }
         
+        // (++it)-- returns the next iterator value, leaving
+        //   it unchanged.
         if ((++it)-- != m_impl.end())
             out << ", ";
         if (indent) out << std::endl;
@@ -225,7 +227,7 @@ std::vector<Node*> const& ArrayNode::impl() const
 void ArrayNode::M_serialize(std::ostream& out, int level, bool indent) const
 {
     std::string pre = "";
-    for (int i = 0; i < level; ++i) pre += " ";
+    for (int i = 0; indent && i < level; ++i) pre += " ";
     
     out << pre << '[';
     bool multi = indent && M_multiline();

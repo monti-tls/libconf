@@ -115,10 +115,12 @@ int main()
         std::cout << "a = " << a << std::endl;
         std::cout << "pair = (" << p.first << ", " << p.second << ")" << std::endl;
         
+        // Modify some values and then save configuration
         a = 321;
         p.first = -1;
         p.second = "foo";
-        // Serialize test, now the values must have changed
+        
+        // Serialize the template, now the values must have changed
         std::cout << "Serialized (indented version) :" << std::endl;
         json::synthetize(tpl, std::cout);
         std::cout << std::endl << "Compact version : ";

@@ -29,7 +29,7 @@ int main(int argc, char** argv)
         // You add options/switches this way, each modifier (Option::set*) returns a reference,
         //   so calls can be chained.
         // Descriptions are optional (the help message is generated accordingly).
-        Option& a = parser.addSwitch('h', "help").setDescription("Display this help");
+        Option& a = parser.addSwitch('h', "help").setDescription("Display this help").setStop();
         Option& b = parser.addSwitch('b').setDescription("Switch -b");
         Option& c = parser.addOption('c', "c-option").setRequired();
         Option& d = parser.addSwitch('d', "d-switch");

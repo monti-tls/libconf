@@ -27,6 +27,8 @@ namespace cli
     //! The description is used in the auto-generated help.
     //! Options can take a value (e.g., are valued), and
     //!   can be required to start the program.
+    //! The setStop() modifier is used to stop the parser when
+    //!   this option is encountered (useful for help option for example).
     class Option
     {
     public:
@@ -38,6 +40,8 @@ namespace cli
         Option& setDescription(std::string const& description);
         //! Set this option required.
         Option& setRequired(bool required = true);
+        //! Set this option to stop the parser.
+        Option& setStop(bool stop = true);
         
         //! Get the short name of this option.
         char shortName() const;
@@ -47,6 +51,8 @@ namespace cli
         bool valued() const;
         //! Returns whether or not this option is mandatory.
         bool required() const;
+        //! Returns whether or not this option stops the parser.
+        bool stop() const;
         //! Returns the help description of this option.
         std::string const& description() const;
         
@@ -55,6 +61,7 @@ namespace cli
         std::string m_longName;
         bool m_valued;
         bool m_required;
+        bool m_stop;
         std::string m_description;
     };
 }

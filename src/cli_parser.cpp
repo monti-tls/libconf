@@ -159,7 +159,7 @@ void Parser::parse()
         if (option->valued())
         {
             M_skip();
-            while (!std::isspace(m_nextChar) && m_nextChar > 0)
+            while (m_nextChar != '-' && !std::isspace(m_nextChar) && m_nextChar > 0)
                 value += M_get();
         }
         
@@ -178,6 +178,9 @@ void Parser::parse()
         
         // Register option and value
         m_values[option] = value;
+        
+        if (option->stop())
+            return;
     }
     
     // Check for required options

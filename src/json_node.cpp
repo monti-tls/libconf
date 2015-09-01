@@ -15,6 +15,7 @@
  */
 
 #include "json_node.h"
+#include <iomanip>
 
 using namespace json;
 
@@ -30,6 +31,11 @@ std::string Node::typeName(Node::Type type)
     return "?";
 }
 
+void Node::serialize(std::ostream& out, bool indent) const
+{
+    M_serialize(out, 0, indent);
+}
+
 // Numeric value node
 
 NumberNode::NumberNode(float value) :
@@ -41,6 +47,19 @@ Node::Type NumberNode::type() const
 
 float NumberNode::value() const
 { return m_value; }
+
+void NumberNode::M_serialize(std::ostream& out, int level, bool indent) const
+{
+    std::string pre = "";
+    for (int i = 0; i < level; ++i) pre += " ";
+    
+    out << pre << m_value;
+}
+
+bool NumberNode::M_multiline() const
+{
+    return false;
+}
 
 // Boolean value node
 
@@ -54,6 +73,19 @@ Node::Type BooleanNode::type() const
 bool BooleanNode::value() const
 { return m_value; }
 
+void BooleanNode::M_serialize(std::ostream& out, int level, bool indent) const
+{
+    std::string pre = "";
+    for (int i = 0; i < level; ++i) pre += " ";
+    
+    out << pre << (m_value ? "true" : "false");
+}
+
+bool BooleanNode::M_multiline() const
+{
+    return false;
+}
+
 // String value node
 
 StringNode::StringNode(std::string const& value) :
@@ -65,6 +97,28 @@ Node::Type StringNode::type() const
 
 std::string const& StringNode::value() const
 { return m_value; }
+
+void StringNode::M_serialize(std::ostream& out, int level, bool indent) const
+{
+    std::string pre = "";
+    for (int i = 0; i < level; ++i) pre += " ";
+    
+    out << pre << '"';
+    for (unsigned int i = 0; i < m_value.size(); ++i)
+    {
+        char c = m_value[i];
+        if (c == '\n') out << '\\' << 'n';
+        else if (c == '\t') out << '\\' << 't';
+        else if (c == '"') out << '\\' << '"';
+        else out << c;
+    }
+    out << '"';
+}
+
+bool StringNode::M_multiline() const
+{
+    return false;
+}
 
 // Object node
 
@@ -95,6 +149,43 @@ std::map<std::string, Node*>& ObjectNode::impl()
 
 std::map<std::string, Node*> const& ObjectNode::impl() const
 { return m_impl; }
+
+void ObjectNode::M_serialize(std::ostream& out, int level, bool indent) const
+{
+    std::string pre = "";
+    for (int i = 0; i < level; ++i) pre += " ";
+    
+    out << pre << '{';
+    if (indent) out << std::endl;
+    
+    std::map<std::string, Node*>::const_iterator it;
+    for (it = m_impl.begin(); it != m_impl.end(); ++it)
+    {
+        if (indent) out << pre << "    ";
+        out << '"' << it->first << "\" : ";
+        
+        if (indent && it->second->M_multiline())
+        {
+            out << std::endl;
+            it->second->M_serialize(out, level + 4, indent);
+        }
+        else
+        {
+            it->second->M_serialize(out, 0, false);
+        }
+        
+        if ((++it)-- != m_impl.end())
+            out << ", ";
+        if (indent) out << std::endl;
+    }
+    
+    out << pre << '}';
+}
+
+bool ObjectNode::M_multiline() const
+{
+    return true;
+}
 
 // Array node
 
@@ -130,3 +221,39 @@ std::vector<Node*>& ArrayNode::impl()
 
 std::vector<Node*> const& ArrayNode::impl() const
 { return m_impl; }
+
+void ArrayNode::M_serialize(std::ostream& out, int level, bool indent) const
+{
+    std::string pre = "";
+    for (int i = 0; i < level; ++i) pre += " ";
+    
+    out << pre << '[';
+    bool multi = indent && M_multiline();
+    if (multi) out << std::endl;
+    
+    for (unsigned int i = 0; i < m_impl.size(); ++i)
+    {
+        if (multi)
+        {
+            m_impl[i]->M_serialize(out, level + 4, indent);
+        }
+        else
+        {
+            m_impl[i]->M_serialize(out, 0, false);
+        }
+        
+        if (i != m_impl.size()-1)
+            out << ", ";
+        if (multi) out << std::endl;
+    }
+    
+    out << pre << ']';
+}
+
+bool ArrayNode::M_multiline() const
+{
+    for (unsigned int i = 0; i < m_impl.size(); ++i)
+        if (m_impl[i]->M_multiline())
+            return true;
+    return false;
+}

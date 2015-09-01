@@ -29,8 +29,15 @@ namespace json
 {
     Node* parse(std::string const& file);
     Node* parse(std::istream& file);
+    
+    void serialize(Node* node, std::string const& file, bool indent = true);
+    void serialize(Node* node, std::ostream& file, bool indent = true);
+    
     void extract(Template const& tpl, std::string const& file);
     void extract(Template const& tpl, std::istream& file);
+    
+    void synthetize(Template const& tpl, std::string const& file, bool indent = true);
+    void synthetize(Template const& tpl, std::ostream& file, bool indent = true);
 }
 
 #endif // LCONF_JSON_H

@@ -61,7 +61,12 @@ namespace json
         
         //! Here we don't care about synthetization.
         Node* synthetize() const
-        { return 0; }
+        {
+            Template tpl;
+            tpl.bind_array(m_ref.first);
+            tpl.bind_array(m_ref.second);
+            return tpl.synthetize();
+        }
         
     private:
         std::pair<U, V>& m_ref;
@@ -109,6 +114,16 @@ int main()
         // Verify that everything is OK :)
         std::cout << "a = " << a << std::endl;
         std::cout << "pair = (" << p.first << ", " << p.second << ")" << std::endl;
+        
+        a = 321;
+        p.first = -1;
+        p.second = "foo";
+        // Serialize test, now the values must have changed
+        std::cout << "Serialized (indented version) :" << std::endl;
+        json::synthetize(tpl, std::cout);
+        std::cout << std::endl << "Compact version : ";
+        json::synthetize(tpl, std::cout, false);
+        std::cout << std::endl;
     }
     catch(Exception const& exc)
     {

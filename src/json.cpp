@@ -34,6 +34,19 @@ namespace json
         return parser.parse();
     }
     
+    void serialize(Node* node, std::string const& file, bool indent)
+    {
+        std::ofstream fs(file, std::ios::out);
+        if (!fs)
+            throw std::logic_error("json::serialize: unable to open\"" + file + "\"");
+        serialize(node, fs, indent);
+    }
+    
+    void serialize(Node* node, std::ostream& file, bool indent)
+    {
+        node->serialize(file, indent);
+    }
+    
     void extract(Template const& tpl, std::string const& file)
     {
         Node* node = parse(file);
@@ -45,6 +58,20 @@ namespace json
     {
         Node* node = parse(file);
         tpl.extract(node);
+        delete node;
+    }
+    
+    void synthetize(Template const& tpl, std::string const& file, bool indent)
+    {
+        Node* node = tpl.synthetize();
+        serialize(node, file, indent);
+        delete node;
+    }
+    
+    void synthetize(Template const& tpl, std::ostream& file, bool indent)
+    {
+        Node* node = tpl.synthetize();
+        serialize(node, file, indent);
         delete node;
     }
 }

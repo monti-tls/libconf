@@ -20,6 +20,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <iostream>
 
 namespace json
 {
@@ -31,6 +32,10 @@ namespace json
     
     class Node
     {
+        //! Needed to access private members of *Node from
+        //!   M_serialize() and M_multiline().
+        friend class ObjectNode;
+        friend class ArrayNode;
     public:
         enum Type
         {
@@ -46,14 +51,25 @@ namespace json
         
     public:
         virtual ~Node() {}
+        
+        //! Get the type of this node.
         virtual Type type() const = 0;
+        //! Get the type string of this node.
         static std::string typeName(Type type);
+        //! Serialize the JSON tree whose root is this node to the
+        //!   given output stream.
+        //! If indent == false, no indentation is outputted
+        //!   (and you get a compact, single-line output).
+        void serialize(std::ostream& out, bool indent = true) const;
         
         template <typename T>
         T* downcast()
         { return M_downcast((T*) 0); }
         
-    private:
+    protected:
+        virtual void M_serialize(std::ostream& out, int level, bool indent) const = 0;
+        virtual bool M_multiline() const = 0;
+        
         template <typename T>
         T* M_downcast(T*)
         { return 0; }
@@ -90,6 +106,10 @@ namespace json
         float value() const;
         
     private:
+        void M_serialize(std::ostream& out, int level, bool indent) const;
+        bool M_multiline() const;
+        
+    private:
         float m_value;
     };
     
@@ -102,6 +122,10 @@ namespace json
         bool value() const;
         
     private:
+        void M_serialize(std::ostream& out, int level, bool indent) const;
+        bool M_multiline() const;
+        
+    private:
         bool m_value;
     };
     
@@ -112,6 +136,10 @@ namespace json
         
         Type type() const;
         std::string const& value() const;
+        
+    private:
+        void M_serialize(std::ostream& out, int level, bool indent) const;
+        bool M_multiline() const;
         
     private:
         std::string m_value;
@@ -131,6 +159,10 @@ namespace json
         std::map<std::string, Node*> const& impl() const;
         
     private:
+        void M_serialize(std::ostream& out, int level, bool indent) const;
+        bool M_multiline() const;
+        
+    private:
         std::map<std::string, Node*> m_impl;
     };
     
@@ -146,6 +178,10 @@ namespace json
         Node* at(size_t i) const;
         std::vector<Node*>& impl();
         std::vector<Node*> const& impl() const;
+        
+    private:
+        void M_serialize(std::ostream& out, int level, bool indent) const;
+        bool M_multiline() const;
         
     private:
         std::vector<Node*> m_impl;

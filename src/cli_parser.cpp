@@ -260,7 +260,7 @@ std::vector<std::string> const& Parser::arguments() const
 
 void Parser::showHelp(std::ostream& out) const
 {
-    out << "usage: " << m_programName << " [options]" << std::endl;
+    out << "usage: " << m_programName << " [options] [arguments]" << std::endl;
     
     if (m_programDescription.size())
         out << std::endl << m_programDescription << std::endl << std::endl;

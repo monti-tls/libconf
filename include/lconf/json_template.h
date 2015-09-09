@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,12 +19,12 @@
 #ifndef LCONF_JSON_TEMPLATE_H
 #define LCONF_JSON_TEMPLATE_H
 
-#include "json_node.h"
+#include "lconf/json_node.h"
 #include <string>
 #include <vector>
 #include <map>
 
-namespace json
+namespace lconf { namespace json
 {
     //! Common exception class to keep track of offending nodes.
     class Exception : public std::logic_error
@@ -323,6 +325,6 @@ namespace json
     private:
         Element* m_impl;
     };
-}
+} }
 
 #endif // LCONF_JSON_TEMPLATE_H

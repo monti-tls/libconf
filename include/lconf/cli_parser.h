@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +19,7 @@
 #ifndef LCONF_CLI_PARSER_H
 #define LCONF_CLI_PARSER_H
 
-#include "cli_option.h"
+#include "lconf/cli_option.h"
 #include <string>
 #include <sstream>
 #include <set>
@@ -25,7 +27,7 @@
 #include <vector>
 #include <iostream>
 
-namespace cli
+namespace lconf { namespace cli
 {
     //! A CLI option string parser.
     //! It works with a given set of switches (non-valued options)
@@ -103,6 +105,6 @@ namespace cli
         std::map<Option*, std::string> m_values;
         std::vector<std::string> m_arguments;
     };
-}
+} }
 
 #endif // LCONF_CLI_PARSER_H

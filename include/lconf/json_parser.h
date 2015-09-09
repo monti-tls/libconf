@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,10 +19,10 @@
 #ifndef LCONF_JSON_PARSER_H
 #define LCONF_JSON_PARSER_H
 
-#include "json_lexer.h"
-#include "json_node.h"
+#include "lconf/json_lexer.h"
+#include "lconf/json_node.h"
 
-namespace json
+namespace lconf { namespace json
 {
     class Parser
     {
@@ -40,6 +42,6 @@ namespace json
     private:
         Lexer& m_lex;
     };
-}
+} }
 
 #endif // LCONF_JSON_PARSER_H

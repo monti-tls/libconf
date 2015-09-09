@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,10 +19,10 @@
 #ifndef LCONF_JSON_LEXER_H
 #define LCONF_JSON_LEXER_H
 
-#include "json_token.h"
+#include "lconf/json_token.h"
 #include <iostream>
 
-namespace json
+namespace lconf { namespace json
 {
     class Lexer
     {
@@ -51,6 +53,6 @@ namespace json
         Token m_nextToken;
         Token::Info m_currentInfo;
     };
-}
+} }
 
 #endif // LCONF_JSON_LEXER_H

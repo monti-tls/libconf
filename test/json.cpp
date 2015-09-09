@@ -1,5 +1,7 @@
 /* This file is part of libconf.
- *
+ * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -14,8 +16,8 @@
  * along with libconf.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "json.h"
-#include "json_template.h"
+#include "lconf/json.h"
+#include "lconf/json_template.h"
 
 #include <sstream>
 
@@ -30,7 +32,7 @@
 //!    and must provide a constructor taking a reference to the handled type.
 //! Secondly, you must specialize the Terminal<> class to use the newly integrated one
 //!   (this is really straigthforward as you can see below).
-namespace json
+namespace lconf { namespace json
 {
     template <typename U, typename V>
     class PairElement : public UserElement
@@ -81,10 +83,11 @@ namespace json
         Terminal(std::pair<U, V>& ref) : PairElement<U, V>(ref)
         {}
     };
-}
+} }
 
 int main()
 {
+    using namespace lconf;
     using namespace json;
     
     try

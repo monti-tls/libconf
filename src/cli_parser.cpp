@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -14,8 +16,9 @@
  * along with libconf.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cli_parser.h"
+#include "lconf/cli_parser.h"
 
+using namespace lconf;
 using namespace cli;
 
 Parser::Parser(int argc, char** argv) :

@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +24,7 @@
 #include <vector>
 #include <iostream>
 
-namespace json
+namespace lconf { namespace json
 {
     class NumberNode;
     class BooleanNode;
@@ -186,6 +188,6 @@ namespace json
     private:
         std::vector<Node*> m_impl;
     };
-}
+} }
 
 #endif // LCONF_JSON_NODE_H

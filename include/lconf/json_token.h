@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +21,7 @@
 
 #include <string>
 
-namespace json
+namespace lconf { namespace json
 {
     class Token
     {
@@ -60,6 +62,6 @@ namespace json
         std::string m_value;
         Info m_info;
     };
-}
+} }
 
 #endif // LCONF_JSON_TOKEN_H

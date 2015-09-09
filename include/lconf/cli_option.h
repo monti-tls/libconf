@@ -1,5 +1,7 @@
 /* This file is part of libconf.
  * 
+ * Copyright (c) 2015, Alexandre Monti
+ * 
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +21,7 @@
 
 #include <string>
 
-namespace cli
+namespace lconf { namespace cli
 {
     //! A class representing a command-line (CLI) option.
     //! An option can have a short name (e.g. -c) and/or a long
@@ -64,6 +66,6 @@ namespace cli
         bool m_stop;
         std::string m_description;
     };
-}
+} }
 
 #endif // LCONF_CLI_OPTION_H

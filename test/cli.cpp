@@ -16,8 +16,7 @@
  * along with libconf.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "lconf/cli_option.h"
-#include "lconf/cli_parser.h"
+#include "lconf/cli.h"
 
 int main(int argc, char** argv)
 {

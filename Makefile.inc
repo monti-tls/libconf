@@ -17,6 +17,7 @@
 
 ## Compilation options
 CXX=g++
+AR=ar
 CXXFLAGS=-fPIC -Wall -Wextra -std=gnu++11
 LDFLAGS=
 RELEASE_FLAGS=-O3

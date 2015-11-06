@@ -29,7 +29,7 @@ $(BINARY): $(OBJECTS)
 	@echo "${blue}Linking product '$@'${rcol}"
 	@mkdir -p $(@D)
 #@$(CXX) -shared $(OBJECTS) -o $(BINARY) $(LDFLAGS)
-	@ar rcs $(BINARY) $(OBJECTS)
+	@$(AR) rcs $(BINARY) $(OBJECTS)
 
 -include $(DEPENDENCIES)
 

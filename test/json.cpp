@@ -96,6 +96,7 @@ int main()
         std::string val =
         "{\n"
         "   \"a\" : 123,\n"
+        "   \"b\" : 10e-3,\n"
         "   \"p\" : [1, \"yolo\"]\n"
         "}"
         ;
@@ -104,11 +105,13 @@ int main()
         
         // The variables that we will update w/ the configuration.
         int a;
+        float b;
         std::pair<int, std::string> p;
         
         // Create the template.
         Template tpl = Template()
         .bind("a", a)
+        .bind("b", b)
         .bind("p", p);
         
         // Match the template and extract conf data from the stream.
@@ -116,10 +119,12 @@ int main()
         
         // Verify that everything is OK :)
         std::cout << "a = " << a << std::endl;
+        std::cout << "b = " << b << std::endl;
         std::cout << "pair = (" << p.first << ", " << p.second << ")" << std::endl;
         
         // Modify some values and then save configuration
         a = 321;
+        b = 0.000000005;
         p.first = -1;
         p.second = "foo";
         

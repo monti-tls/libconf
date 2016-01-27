@@ -236,6 +236,33 @@ Token Lexer::M_getToken()
                             ok = false;
                     }
                 }
+
+                // Eventual exponent part
+                if (ok && (m_nextChar == 'e' || m_nextChar == 'E'))
+                {
+                    // Eat the 'e'
+                    value += M_getChar();
+                    if (m_nextChar < 0)
+                        ok = false;
+
+                    // Eventual exponent's sign
+                    if (m_nextChar == '-')
+                    {
+                        value += M_getChar();
+                        if (m_nextChar < 0)
+                            ok = false;
+                    }
+
+                    if (!std::isdigit(m_nextChar))
+                        ok = false;
+
+                    while (ok && std::isdigit(m_nextChar))
+                    {
+                        value += M_getChar();
+                        if (m_nextChar < 0)
+                            ok = false;
+                    }
+                }
                 
                 if (!ok)
                     token = Token::Bad;

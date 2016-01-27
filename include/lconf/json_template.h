@@ -87,7 +87,7 @@ namespace lconf { namespace json
     public:
         Scalar(T& ref) :
             m_ref(ref)
-        { }
+        {}
         
         Type type() const
         { return Element::Scalar; }
@@ -102,7 +102,7 @@ namespace lconf { namespace json
         Node* synthetize() const
         { return new N(m_ref); }
         
-    private:
+    protected:
         T& m_ref;
     };
     
@@ -324,6 +324,97 @@ namespace lconf { namespace json
         
     private:
         Element* m_impl;
+    };
+
+    //!
+    //! Below are the hacks to handle the std::vector<bool> specialization,
+    //!   for which the operator[] does not return a bool& but a special
+    //!   proxy class
+    //!
+
+    //! Generic scalar element.
+    //! We must use the hack of allocating a copy of the vector::reference,
+    //!   because if we store by value we violate the constness of extract,
+    //!   and if we store it by reference there is an "always true" bug
+    template <Node::Type tp, typename N>
+    class Scalar<tp, N, std::vector<bool>::reference> : public Element
+    {
+    public:
+        Scalar(std::vector<bool>::reference& ref) :
+            m_ref(new std::vector<bool>::reference(ref))
+        {}
+
+        ~Scalar()
+        { delete m_ref; }
+        
+        Type type() const
+        { return Element::Scalar; }
+        
+        void extract(Node* node) const
+        {
+            if (node->type() != tp)
+                throw Exception(node, "json::Scalar::extract: expecting a node of type " + Node::typeName(tp));
+            *m_ref = node->downcast<N>()->value();
+        }
+        
+        Node* synthetize() const
+        { return new N(*m_ref); }
+        
+    protected:
+        std::vector<bool>::reference* m_ref;
+    };
+    
+    template <>
+    class Terminal<std::vector<bool>::reference> : public Scalar<Node::Boolean, BooleanNode, std::vector<bool>::reference>
+    {
+    public:
+        Terminal(std::vector<bool>::reference ref) : Scalar(ref)
+        {}
+    };
+
+    //! Generic vector element.
+    template <>
+    class Vector<bool> : public Element
+    {
+    public:
+        Vector(std::vector<bool>& ref) :
+            m_ref(ref)
+        {}
+        
+        Type type() const
+        { return Element::Vector; }
+        
+        void extract(Node* node) const
+        {
+            if (node->type() != Node::Array)
+                throw Exception(node, "json::Vector::extract: expecting an array node");
+            
+            ArrayNode* arr = node->downcast<ArrayNode>();
+            
+            m_ref.clear();
+            m_ref.reserve(arr->size());
+            for (unsigned int i = 0; i < arr->size(); ++i)
+            {
+                bool value;
+                Terminal<bool> term(value);
+                term.extract(arr->at(i));
+                m_ref.push_back(value);
+            }
+        }
+        
+        Node* synthetize() const
+        {
+            ArrayNode* arr = new ArrayNode();
+            for (unsigned int i = 0; i < m_ref.size(); ++i)
+            {
+                Terminal<std::vector<bool>::reference> term(m_ref[i]);
+                arr->impl().push_back(term.synthetize());
+            }
+            return arr;
+        }
+        
+    private:
+        std::vector<bool>& m_ref;
     };
 } }
 

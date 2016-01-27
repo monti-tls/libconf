@@ -97,7 +97,8 @@ int main()
         "{\n"
         "   \"a\" : 123,\n"
         "   \"b\" : 10e-3,\n"
-        "   \"p\" : [1, \"yolo\"]\n"
+        "   \"p\" : [1, \"yolo\"],\n"
+        "   \"v\":  [true, false, true]\n"
         "}"
         ;
         std::istringstream ss;
@@ -107,12 +108,14 @@ int main()
         int a;
         float b;
         std::pair<int, std::string> p;
+        std::vector<bool> v;
         
         // Create the template.
         Template tpl = Template()
         .bind("a", a)
         .bind("b", b)
-        .bind("p", p);
+        .bind("p", p)
+        .bind("v", v);
         
         // Match the template and extract conf data from the stream.
         json::extract(tpl, ss);
@@ -121,12 +124,17 @@ int main()
         std::cout << "a = " << a << std::endl;
         std::cout << "b = " << b << std::endl;
         std::cout << "pair = (" << p.first << ", " << p.second << ")" << std::endl;
+        std::cout << "v = ";
+        for (auto val : v)
+            std::cout << (val ? "true" : "false") << " ";
+        std::cout << std::endl;
         
         // Modify some values and then save configuration
         a = 321;
         b = 0.000000005;
         p.first = -1;
         p.second = "foo";
+        v.push_back(false);
         
         // Serialize the template, now the values must have changed
         std::cout << "Serialized (indented version) :" << std::endl;

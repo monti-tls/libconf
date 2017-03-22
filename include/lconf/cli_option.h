@@ -1,17 +1,17 @@
 /* This file is part of libconf.
- * 
+ *
  * Copyright (c) 2015, Alexandre Monti
- * 
+ *
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libconf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libconf.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -37,14 +37,16 @@ namespace lconf { namespace cli
         //! Create an option with a given short name, long name and properties.
         Option(char shortName, std::string const& longName, bool valued);
         ~Option();
-        
+
         //! Set the help description for this option.
         Option& setDescription(std::string const& description);
         //! Set this option required.
         Option& setRequired(bool required = true);
         //! Set this option to stop the parser.
         Option& setStop(bool stop = true);
-        
+        //! Set this option as possibly repetitive.
+        Option& setRepeats(bool repeats = true);
+
         //! Get the short name of this option.
         char shortName() const;
         //! Get the long name of this option.
@@ -55,15 +57,18 @@ namespace lconf { namespace cli
         bool required() const;
         //! Returns whether or not this option stops the parser.
         bool stop() const;
+        //! Returns whether or not this option can be repeated multiple times.
+        bool repeats() const;
         //! Returns the help description of this option.
         std::string const& description() const;
-        
+
     private:
         char m_shortName;
         std::string m_longName;
         bool m_valued;
         bool m_required;
         bool m_stop;
+        bool m_repeats;
         std::string m_description;
     };
 } }

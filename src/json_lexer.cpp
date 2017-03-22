@@ -1,17 +1,17 @@
 /* This file is part of libconf.
- * 
+ *
  * Copyright (c) 2015, Alexandre Monti
- * 
+ *
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libconf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libconf.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -47,7 +47,7 @@ void Lexer::M_init()
 {
     m_currentInfo.line = 1;
     m_currentInfo.column = 0;
-    
+
     // Get first char (m_nextChar is now valid)
     m_nextChar = 0;
     M_getChar();
@@ -62,7 +62,7 @@ int Lexer::M_getChar()
 {
     int ch = m_nextChar;
     m_nextChar = m_in.get();
-    
+
     // Update stream information
     if (ch == '\n')
     {
@@ -70,7 +70,7 @@ int Lexer::M_getChar()
         m_currentInfo.column = 0;
     }
     ++m_currentInfo.column;
-    
+
     return ch;
 }
 
@@ -94,7 +94,7 @@ void Lexer::M_skipComments()
             M_getChar();
             if (m_nextChar < 0) return;
         }
-        
+
         M_skipWs();
     }
 }
@@ -112,18 +112,18 @@ Token Lexer::M_getToken()
 {
     // Skip whitespaces and comments
     M_skip();
-    
+
     // Create token (bad by default), and save current stream information
     Token token = Token::Bad;
     Token::Info info = m_currentInfo;
-    
+
     // Handle EOF gracefully
     if (m_nextChar < 0)
         token = Token::Eof;
     else
     {
         bool eatlast = true;
-        
+
         if (m_nextChar == '{')
             token = Token::LeftBrace;
         else if (m_nextChar == '}')
@@ -142,32 +142,58 @@ Token Lexer::M_getToken()
             token = M_matchKeyword(Token::False, "false");
         else
         {
-            // String and identifiers
-            if (m_nextChar == '"')
+            // Includes
+            if (m_nextChar == '@')
             {
-                // Eat the double quotes
                 M_getChar();
-                
-                std::string value;
-                bool ok = true;
-                
+
+                std::string path;
+
+                bool ok = m_nextChar == '"';
+                M_getChar();
+
                 while (ok && m_nextChar != '"')
                 {
                     // Stop if EOF is encountered
                     if (m_nextChar < 0)
                         ok = false;
-                    
+
+                    path += M_getChar();
+                }
+
+                ok = ok && m_nextChar == '"';
+
+                if (!ok)
+                    token = Token::Bad;
+                else
+                    token = Token(Token::Include, path);
+            }
+            // String and identifiers
+            else if (m_nextChar == '"')
+            {
+                // Eat the double quotes
+                M_getChar();
+
+                std::string value;
+                bool ok = true;
+
+                while (ok && m_nextChar != '"')
+                {
+                    // Stop if EOF is encountered
+                    if (m_nextChar < 0)
+                        ok = false;
+
                     // Handle some escape sequences
                     if (m_nextChar == '\\')
                     {
                         // Eat the backslash
                         M_getChar();
-                        
+
                         // Get the escaped character (and handle EOF)
                         int ch = M_getChar();
                         if (ch < 0)
                             ok = false;
-                        
+
                         if (ch == '\\')
                             value += '\\';
                         else if (ch == '"')
@@ -183,10 +209,10 @@ Token Lexer::M_getToken()
                     else
                         value += M_getChar();
                 }
-                
+
                 // Strings must end with another double quotes
                 ok = ok && m_nextChar == '"';
-                
+
                 if (!ok)
                     token = Token::Bad;
                 else
@@ -197,7 +223,7 @@ Token Lexer::M_getToken()
             {
                 std::string value;
                 bool ok = true;
-                
+
                 // Eventual sign
                 if (m_nextChar == '-')
                 {
@@ -205,7 +231,7 @@ Token Lexer::M_getToken()
                     if (m_nextChar < 0)
                         ok = false;
                 }
-                
+
                 // Eventual integer part
                 while (ok && std::isdigit(m_nextChar))
                 {
@@ -213,7 +239,7 @@ Token Lexer::M_getToken()
                     if (m_nextChar < 0)
                         ok = false;
                 }
-                
+
                 // Eventual floating part
                 if (ok && m_nextChar == '.')
                 {
@@ -221,13 +247,13 @@ Token Lexer::M_getToken()
                     value += M_getChar();
                     if (m_nextChar < 0)
                         ok = false;
-                    
+
                     // Don't allow empty floating parts
                     //   (as we already allow empty integer parts, we
                     //   would end up with '.' as a valid number...)
                     if (!std::isdigit(m_nextChar))
                         ok = false;
-                    
+
                     // Get the floating part
                     while (ok && std::isdigit(m_nextChar))
                     {
@@ -263,21 +289,21 @@ Token Lexer::M_getToken()
                             ok = false;
                     }
                 }
-                
+
                 if (!ok)
                     token = Token::Bad;
                 else
                     token = Token(Token::Number, value);
-                
+
                 eatlast = false;
             }
         }
-        
+
         // Get the last char from previous rules
         if (eatlast && token.type() != Token::Bad)
             M_getChar();
     }
-    
+
     // Set stream information for this token and return
     token.setInfo(info);
     return token;
@@ -295,6 +321,6 @@ Token Lexer::M_matchKeyword(Token::Type type, std::string const& kw)
             break;
         M_getChar();
     }
-    
+
     return type;
 }

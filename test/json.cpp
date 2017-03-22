@@ -1,7 +1,7 @@
 /* This file is part of libconf.
- * 
+ *
  * Copyright (c) 2015, Alexandre Monti
- * 
+ *
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -41,26 +41,26 @@ namespace lconf { namespace json
         PairElement(std::pair<U, V>& ref) :
             m_ref(ref)
         {}
-        
+
         void extract(Node* node) const
         {
             // Type-check the array, throwing a json::Exception instance in case
             //   of a mismatch.
             if (node->type() != Node::Array)
                 throw Exception(node, "json::PairElement: type mismatch");
-            
+
             // Downcast safely the node to check its size.
             ArrayNode* arr = node->downcast<ArrayNode>();
             if (arr->size() != 2)
                 throw Exception(node, "json::PairElement: size mismatch, expecting 2 for a pair");
-            
+
             // Use another template to read in the array.
             Template tpl;
             tpl.bind_array(m_ref.first);
             tpl.bind_array(m_ref.second);
             tpl.extract(node);
         }
-        
+
         //! Here we don't care about synthetization.
         Node* synthetize() const
         {
@@ -69,11 +69,11 @@ namespace lconf { namespace json
             tpl.bind_array(m_ref.second);
             return tpl.synthetize();
         }
-        
+
     private:
         std::pair<U, V>& m_ref;
     };
-    
+
     //! Specialize the Terminal<> class to expose the new type to the json::Template
     //!   system.
     template<typename U, typename V>
@@ -89,7 +89,7 @@ int main()
 {
     using namespace lconf;
     using namespace json;
-    
+
     try
     {
         // Set up the JSON input stream (one can use any std::istream).
@@ -103,23 +103,23 @@ int main()
         ;
         std::istringstream ss;
         ss.str(val);
-        
+
         // The variables that we will update w/ the configuration.
         int a;
         float b;
         std::pair<int, std::string> p;
         std::vector<bool> v;
-        
+
         // Create the template.
         Template tpl = Template()
         .bind("a", a)
         .bind("b", b)
         .bind("p", p)
         .bind("v", v);
-        
+
         // Match the template and extract conf data from the stream.
         json::extract(tpl, ss);
-        
+
         // Verify that everything is OK :)
         std::cout << "a = " << a << std::endl;
         std::cout << "b = " << b << std::endl;
@@ -128,14 +128,14 @@ int main()
         for (auto val : v)
             std::cout << (val ? "true" : "false") << " ";
         std::cout << std::endl;
-        
+
         // Modify some values and then save configuration
         a = 321;
         b = 0.000000005;
         p.first = -1;
         p.second = "foo";
         v.push_back(false);
-        
+
         // Serialize the template, now the values must have changed
         std::cout << "Serialized (indented version) :" << std::endl;
         json::synthetize(tpl, std::cout);
@@ -153,6 +153,6 @@ int main()
     {
         std::cerr << "Exception:\n\t" << exc.what() << std::endl;
     }
-    
+
     return 0;
 }

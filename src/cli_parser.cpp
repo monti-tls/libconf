@@ -1,17 +1,17 @@
 /* This file is part of libconf.
- * 
+ *
  * Copyright (c) 2015, Alexandre Monti
- * 
+ *
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libconf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libconf.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -22,14 +22,16 @@ using namespace lconf;
 using namespace cli;
 
 Parser::Parser(int argc, char** argv) :
-    m_programDescription("")
+    m_programDescription(""),
+    m_programLicense(""),
+    m_programUsage("[options] [arguments]")
 {
     m_programName = argv[0];
-    
+
     std::ostringstream ss;
     for (int i = 1; i < argc; ++i)
         ss << argv[i] << " ";
-    
+
     m_in.str(ss.str());
 }
 
@@ -48,6 +50,26 @@ void Parser::setProgramDescription(std::string const& description)
 std::string const& Parser::programDescription() const
 {
     return m_programDescription;
+}
+
+void Parser::setProgramLicense(std::string const& license)
+{
+    m_programLicense = license;
+}
+
+std::string const& Parser::programLicense() const
+{
+    return m_programLicense;
+}
+
+void Parser::setProgramUsage(std::string const& usage)
+{
+    m_programUsage = usage;
+}
+
+std::string const& Parser::programUsage() const
+{
+    return m_programUsage;
 }
 
 Option& Parser::addSwitch(char shortName, std::string const& longName)
@@ -72,7 +94,7 @@ Option* Parser::find(char shortName) const
         if ((*it)->shortName() == shortName)
             return *it;
     }
-    
+
     return 0;
 }
 
@@ -80,14 +102,14 @@ Option* Parser::find(std::string const& longName) const
 {
     if (!longName.size())
         return 0;
-    
+
     std::set<Option*>::const_iterator it = m_options.begin();
     for (; it != m_options.end(); ++it)
     {
         if ((*it)->longName() == longName)
             return *it;
     }
-    
+
     return 0;
 }
 
@@ -105,26 +127,26 @@ void Parser::parse()
 {
     m_values.clear();
     m_arguments.size();
-    
+
     M_get();
     M_skip();
-    
+
     while (m_nextChar == '-')
     {
         M_get();
-        
+
         int shortName = -1;
         std::string longName = "";
         Option* option = 0;
-        
+
         // Long name case
         if (m_nextChar == '-')
         {
             M_get();
-            
+
             while (!std::isspace(m_nextChar) && m_nextChar > 0)
                 longName += M_get();
-            
+
             option = find(longName);
         }
         // Short name case
@@ -133,7 +155,7 @@ void Parser::parse()
             shortName = M_get();
             option = find(shortName);
         }
-        
+
         // The error string, just in case :)
         std::ostringstream errss;
         errss << "cli::Parser::parse: option `-";
@@ -142,21 +164,21 @@ void Parser::parse()
         else
             errss << "-" << longName;
         errss << "' ";
-        
+
         // The option is not defined
         if (!option)
         {
             errss << "is not defined";
             throw std::logic_error(errss.str());
         }
-        
+
         // The option was already defined
-        if (has(option))
+        if (has(option) && !option->repeats())
         {
             errss << "is set multiple times";
             throw std::logic_error(errss.str());
         }
-        
+
         // Get the option value, if needed
         std::string value = "";
         if (option->valued())
@@ -165,27 +187,27 @@ void Parser::parse()
             while (m_nextChar != '-' && !std::isspace(m_nextChar) && m_nextChar > 0)
                 value += M_get();
         }
-        
+
         // Skip some whitespace
         M_skip();
-        
+
         // Value is mandatory !
         if (!value.size() && option->valued())
         {
             errss << "must have a value";
             throw std::logic_error(errss.str());
         }
-        
+
         // Skip some whitespace again
         M_skip();
-        
+
         // Register option and value
-        m_values[option] = value;
-        
+        m_values[option].push_back(value);
+
         if (option->stop())
             return;
     }
-    
+
     // Check for required options
     std::set<Option*>::iterator it = m_options.begin();
     for(; it != m_options.end(); ++it)
@@ -204,20 +226,20 @@ void Parser::parse()
                 errss << "--" << option->longName();
             }
             errss << "' is required but not set";
-            
+
             throw std::logic_error(errss.str());
         }
     }
-    
+
     // Read in arguments
     while (m_nextChar > 0)
     {
         M_skip();
-        
+
         std::string argument = "";
         while (!std::isspace(m_nextChar) && m_nextChar > 0)
             argument += M_get();
-        
+
         if(argument.size())
             m_arguments.push_back(argument);
     }
@@ -242,9 +264,27 @@ bool Parser::has(Option* opt) const
 {
     if (!opt)
         return false;
-    
-    std::map<Option*, std::string>::const_iterator it = m_values.find(opt);
+
+    std::map<Option*, std::vector<std::string> >::const_iterator it = m_values.find(opt);
     return it != m_values.end();
+}
+
+size_t Parser::count(char shortName) const
+{
+    return count(find(shortName));
+}
+
+size_t Parser::count(std::string const& longName) const
+{
+    return count(find(longName));
+}
+
+size_t Parser::count(Option* opt) const
+{
+    if (!opt || !has(opt))
+        return false;
+
+    return m_values.find(opt)->second.size();
 }
 
 std::string Parser::value(char shortName) const
@@ -259,11 +299,30 @@ std::string Parser::value(std::string const& longName) const
 
 std::string Parser::value(Option* opt) const
 {
-    std::map<Option*, std::string>::const_iterator it = m_values.find(opt);
+    std::map<Option*, std::vector<std::string> >::const_iterator it = m_values.find(opt);
+    if (it != m_values.end())
+        return it->second.front();
+
+    return "";
+}
+
+std::vector<std::string> Parser::values(char shortName) const
+{
+    return values(find(shortName));
+}
+
+std::vector<std::string> Parser::values(std::string const& longName) const
+{
+    return values(find(longName));
+}
+
+std::vector<std::string> Parser::values(Option* opt) const
+{
+    std::map<Option*, std::vector<std::string> >::const_iterator it = m_values.find(opt);
     if (it != m_values.end())
         return it->second;
-    
-    return "";
+
+    return std::vector<std::string>();
 }
 
 std::vector<std::string> const& Parser::arguments() const
@@ -271,15 +330,15 @@ std::vector<std::string> const& Parser::arguments() const
 
 void Parser::showHelp(std::ostream& out) const
 {
-    out << "usage: " << m_programName << " [options] [arguments]" << std::endl;
-    
+    out << "usage: " << m_programName << " " << m_programUsage << std::endl;
+
     if (m_programDescription.size())
         out << std::endl << m_programDescription << std::endl << std::endl;
-    
+
     out << "available options:" << std::endl;
-    
+
     std::set<Option*>::const_iterator it;
-    
+
     int width = 0;
     for (it = m_options.begin(); it != m_options.end(); ++it)
     {
@@ -287,30 +346,44 @@ void Parser::showHelp(std::ostream& out) const
         if (w > width)
             width = w;
     }
-    
+
     for (it = m_options.begin(); it != m_options.end(); ++it)
     {
         Option* option = *it;
-        
+
         int w = option->longName().size();
         out << "  -" << option->shortName();
-        
+
         if (option->longName().size())
             out << ", --" << option->longName();
         else
             out << "    ";
-        
+
         if (option->valued())
             out << " <value>";
         else
             out << "        ";
-        
+
         for (int j = 0; j < width-w; ++j)
             out << " ";
-        
+
         if (option->description().size())
             out << ": " << option->description() << ".";
-        
+
+        out << std::endl;
+    }
+
+    if (m_programLicense.size())
+    {
+        out << std::endl << "licensing information:" << std::endl << "  ";
+
+        for (size_t i = 0; i < m_programLicense.size(); ++i)
+        {
+            out << m_programLicense[i];
+            if (m_programLicense[i] == '\n')
+                out << "  ";
+        }
+
         out << std::endl;
     }
 }

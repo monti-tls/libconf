@@ -318,6 +318,8 @@ namespace lconf { namespace json
         
         Template& bind(std::string const& name, Template const& tpl);
         Template& bind_array(Template const& tpl);
+
+        bool bound() const;
         
         void extract(Node* node) const;
         Node* synthetize() const;

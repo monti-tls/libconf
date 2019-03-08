@@ -185,6 +185,11 @@ Template& Template::bind_array(Template const& tpl)
     return *this;
 }
 
+bool Template::bound() const
+{
+    return m_impl;
+}
+
 void Template::extract(Node* node) const
 {
     if (!m_impl)

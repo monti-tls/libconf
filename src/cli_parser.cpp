@@ -184,8 +184,31 @@ void Parser::parse()
         if (option->valued())
         {
             M_skip();
-            while (m_nextChar != '-' && !std::isspace(m_nextChar) && m_nextChar > 0)
-                value += M_get();
+
+            if (m_nextChar == '"')
+            {
+                M_get();
+                while (m_nextChar > 0 && m_nextChar != '"')
+                {
+                    if (m_nextChar == '\\')
+                    {
+                        M_get();
+                        if (m_nextChar == '"')
+                            value += M_get();
+                        else
+                            value += '\\' + M_get();
+                    }
+                    else
+                        value += M_get();
+                }
+                if (m_nextChar == '"')
+                    M_get();
+            }
+            else
+            {
+                while (!std::isspace(m_nextChar) && m_nextChar > 0)
+                    value += M_get();
+            }
         }
 
         // Skip some whitespace

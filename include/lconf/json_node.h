@@ -138,6 +138,7 @@ namespace lconf { namespace json
         
         Type type() const;
         std::string const& value() const;
+        std::string escapedValue() const;
         
     private:
         void M_serialize(std::ostream& out, int level, bool indent) const;

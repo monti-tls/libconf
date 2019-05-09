@@ -101,21 +101,31 @@ Node::Type StringNode::type() const
 std::string const& StringNode::value() const
 { return m_value; }
 
+std::string StringNode::escapedValue() const
+{
+    std::string escaped;
+
+    for (auto c : m_value)
+    {
+        if (c == '\n')
+            escaped += "\\n";
+        else if (c == '\t')
+            escaped += "\\t";
+        else if (c == '"')
+            escaped += "\\\"";
+        else
+            escaped += c;
+    }
+
+    return std::move(escaped);
+}
+
 void StringNode::M_serialize(std::ostream& out, int level, bool indent) const
 {
     std::string pre = "";
     for (int i = 0; indent && i < level; ++i) pre += " ";
     
-    out << pre << '"';
-    for (unsigned int i = 0; i < m_value.size(); ++i)
-    {
-        char c = m_value[i];
-        if (c == '\n') out << '\\' << 'n';
-        else if (c == '\t') out << '\\' << 't';
-        else if (c == '"') out << '\\' << '"';
-        else out << c;
-    }
-    out << '"';
+    out << pre << '"' << escapedValue() << '"';
 }
 
 bool StringNode::M_multiline() const

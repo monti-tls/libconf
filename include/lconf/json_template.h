@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream>
+#include <iomanip>
 
 namespace lconf { namespace json
 {
@@ -45,6 +47,8 @@ namespace lconf { namespace json
         {
             User,
             Scalar,
+            POD,
+            Raw,
             Vector,
             Map,
             Object,
@@ -57,6 +61,7 @@ namespace lconf { namespace json
         virtual Type type() const = 0;
         virtual void extract(Node* node) const = 0;
         virtual Node* synthetize() const = 0;
+        virtual bool isConst() const = 0;
         
     public:
         int refs;
@@ -68,7 +73,10 @@ namespace lconf { namespace json
     {
     public:
         Terminal(T&)
-        { }
+        {}
+
+        Terminal(T const&)
+        {}
         
         Type type() const
         { return Element::Scalar; }
@@ -78,6 +86,9 @@ namespace lconf { namespace json
         
         Node* synthetize() const
         { return 0; }
+
+        bool isConst() const
+        { return false; }
     };
     
     //! Generic scalar element.
@@ -86,7 +97,13 @@ namespace lconf { namespace json
     {
     public:
         Scalar(T& ref) :
-            m_ref(ref)
+            m_ref(ref),
+            m_is_const(false)
+        {}
+
+        Scalar(T const& ref) :
+            m_ref(const_cast<T&>(ref)),
+            m_is_const(true)
         {}
         
         Type type() const
@@ -94,6 +111,9 @@ namespace lconf { namespace json
         
         void extract(Node* node) const
         {
+            if (m_is_const)
+                throw Exception(node, "json::Scalar[const]::extract extracting to const binding");
+
             if (node->type() != tp)
                 throw Exception(node, "json::Scalar::extract: expecting a node of type " + Node::typeName(tp));
             m_ref = node->downcast<N>()->value();
@@ -101,10 +121,227 @@ namespace lconf { namespace json
         
         Node* synthetize() const
         { return new N(m_ref); }
+
+        bool isConst() const
+        { return false; }
         
     protected:
         T& m_ref;
+        bool m_is_const;
     };
+
+    //! Generic POD element.
+    template <typename T>
+    class POD : public Element
+    {
+    public:
+        POD(T& ref) :
+            m_ref(ref),
+            m_is_const(false)
+        {}
+
+        POD(T const& ref) :
+            m_ref(const_cast<T&>(ref)),
+            m_is_const(true)
+        {}
+
+        Type type() const
+        { return Element::POD; }
+
+        void extract(Node* node) const
+        {
+            if (m_is_const)
+                throw Exception(node, "json::POD[const]::extract: extracting to const binding");
+
+            if (node->type() != Node::String)
+                throw Exception(node, "json::POD::extract: expecting a string node");
+
+            std::string as_hex = node->downcast<json::StringNode>()->value();
+            if (as_hex.size() % 2 != 0 || as_hex.size() / 2 != sizeof(T))
+                throw Exception(node, "json::POD::extract: bad buffer size");
+
+            uint8_t* data = reinterpret_cast<uint8_t*>(&m_ref);
+            for (std::size_t byte = 0; byte < as_hex.size()/2; ++byte)
+            {
+                std::istringstream ss(as_hex.substr(2*byte, 2));
+                ss >> std::hex;
+                int value;
+                ss >> value;
+                data[byte] = static_cast<uint8_t>(value & 0xFF);
+            }
+        }
+
+        Node* synthetize() const
+        {
+            std::ostringstream ss;
+            uint8_t* data = reinterpret_cast<uint8_t*>(&m_ref);
+
+            for (std::size_t byte = 0; byte < sizeof(T); ++byte)
+                ss << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(data[byte]);
+
+            return new StringNode(ss.str());
+        }
+
+        bool isConst() const
+        { return m_is_const; }
+
+    private:
+        T& m_ref;
+        bool m_is_const;
+    };
+
+    //! Used to tag types as POD
+    template <typename T>
+    struct tag_as_pod_impl
+    {
+    public:
+        tag_as_pod_impl(T& ref) : ref(ref)
+        {}
+
+        T& ref;
+    };
+
+    //! Used to tag types as POD (const)
+    template <typename T>
+    struct tag_as_const_pod_impl
+    {
+    public:
+        tag_as_const_pod_impl(T const& ref) : ref(ref)
+        {}
+
+        T const& ref;
+    };
+
+    //! Used to tag types as POD
+    template<typename T>
+    static tag_as_pod_impl<T> ref_as_pod(T& ref)
+    { return tag_as_pod_impl<T>(ref); }
+
+    template<typename T>
+    static tag_as_const_pod_impl<T> ref_as_pod(T const& ref)
+    { return tag_as_const_pod_impl<T>(ref); }
+
+
+    //! Generic POD element.
+    template <typename T>
+    class Raw : public Element
+    {
+    public:
+        Raw(T*& ptr, std::size_t& size) :
+            m_ptr(&ptr),
+            m_size(&size),
+            m_is_const(false)
+        {}
+
+        Raw(T const* ptr, std::size_t size) :
+            m_ptr(new T*(const_cast<T*>(ptr))),
+            m_size(new std::size_t(size)),
+            m_is_const(true)
+        {}
+
+        ~Raw()
+        {
+            if (m_is_const)
+            {
+                delete m_ptr;
+                delete m_size;
+            }
+        }
+
+        Type type() const
+        { return Element::Raw; }
+
+        void extract(Node* node) const
+        {
+            if (m_is_const)
+                throw Exception(node, "json::Raw[const]::extract: extracting to const binding");
+
+            if (node->type() != Node::String)
+                throw Exception(node, "json::Raw::extract: expecting a string node");
+
+            if (*m_ptr != 0)
+                throw Exception(node, "json::Raw::extract: target memory is already allocated");
+
+            std::string as_hex = node->downcast<json::StringNode>()->value();
+            if (as_hex.size() % 2 != 0)
+                throw Exception(node, "json::Raw::extract: bad buffer size");
+
+            *m_size = as_hex.size() / (2 * sizeof(T));
+            *m_ptr = new T[*m_size];
+
+            for (std::size_t i = 0; i < *m_size; ++i)
+            {
+                uint8_t* data = reinterpret_cast<uint8_t*>(&(*m_ptr)[i]);
+
+                for (std::size_t byte = 0; byte < sizeof(T); ++byte)
+                {
+                    std::string nibbles = as_hex.substr(2*i * sizeof(T) + 2*byte, 2);
+
+                    std::istringstream ss(nibbles);
+                    ss >> std::hex;
+                    int value;
+                    ss >> value;
+
+                    data[byte] = static_cast<uint8_t>(value & 0xFF);
+                }
+            }
+        }
+
+        Node* synthetize() const
+        {
+            std::ostringstream ss;
+
+            for (std::size_t i = 0; i < *m_size; ++i)
+            {
+                uint8_t* data = reinterpret_cast<uint8_t*>(&(*m_ptr)[i]);
+                for (std::size_t byte = 0; byte < sizeof(T); ++byte)
+                    ss << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(data[byte]);
+            }
+
+            return new StringNode(ss.str());
+        }
+
+        bool isConst() const
+        { return m_is_const; }
+
+    private:
+        T** m_ptr;
+        std::size_t* m_size;
+        bool m_is_const;
+    };
+
+    //! Used to tag types as RAW
+    template <typename T>
+    struct tag_as_raw_impl
+    {
+    public:
+        tag_as_raw_impl(T*& ptr, std::size_t& size) : ptr(ptr), size(size)
+        {}
+
+        T*& ptr;
+        std::size_t& size;
+    };
+
+    //! Used to tag types as RAW (const)
+    template <typename T>
+    struct tag_as_const_raw_impl
+    {
+    public:
+        tag_as_const_raw_impl(T const* ptr, std::size_t size) : ptr(ptr), size(size)
+        {}
+
+        T const* ptr;
+        std::size_t size;
+    };
+
+    //! Used to tag types as RAW
+    template<typename T>
+    static tag_as_raw_impl<T> ref_as_raw(T*& ptr, std::size_t& size)
+    { return tag_as_raw_impl<T>(ptr, size); }
+
+    template<typename T>
+    static tag_as_const_raw_impl<T> ref_as_raw(T const* ptr, std::size_t size)
+    { return tag_as_const_raw_impl<T>(ptr, size); }
     
     //! Generic vector element.
     template <typename T>
@@ -112,7 +349,13 @@ namespace lconf { namespace json
     {
     public:
         Vector(std::vector<T>& ref) :
-            m_ref(ref)
+            m_ref(ref),
+            m_is_const(false)
+        {}
+
+        Vector(std::vector<T> const& ref) :
+            m_ref(const_cast<std::vector<T>&>(ref)),
+            m_is_const(true)
         {}
         
         Type type() const
@@ -120,6 +363,9 @@ namespace lconf { namespace json
         
         void extract(Node* node) const
         {
+            if (m_is_const)
+                throw Exception(node, "json::Vector[const]::extract: extracting to const binding");
+
             if (node->type() != Node::Array)
                 throw Exception(node, "json::Vector::extract: expecting an array node");
             
@@ -146,9 +392,13 @@ namespace lconf { namespace json
             }
             return arr;
         }
+
+        bool isConst() const
+        { return m_is_const; }
         
     private:
         std::vector<T>& m_ref;
+        bool m_is_const;
     };
     
     //! Generic map element.
@@ -157,7 +407,13 @@ namespace lconf { namespace json
     {
     public:
         Map(std::map<std::string, T>& ref) :
-            m_ref(ref)
+            m_ref(ref),
+            m_is_const(false)
+        {}
+
+        Map(std::map<std::string, T> const& ref) :
+            m_ref(const_cast<std::map<std::string, T>&>(ref)),
+            m_is_const(true)
         {}
         
         Type type() const
@@ -165,6 +421,9 @@ namespace lconf { namespace json
         
         void extract(Node* node) const
         {
+            if (m_is_const)
+                throw Exception(node, "json::Map[const]::extract: extracting to const binding");
+
             if (node->type() != Node::Object)
                 throw Exception(node, "json::Map::extract: expecting an object node");
             
@@ -193,9 +452,13 @@ namespace lconf { namespace json
             }
             return obj;
         }
+
+        bool isConst() const
+        { return m_is_const; }
         
     private:
         std::map<std::string, T>& m_ref;
+        bool m_is_const;
     };
     
     //! Below are the specializations for the Terminal
@@ -209,6 +472,31 @@ namespace lconf { namespace json
     public:
         Terminal(int& ref) : Scalar(ref)
         {}
+
+        Terminal(int const& ref) : Scalar(ref)
+        {}
+    };
+
+    template <>
+    class Terminal<unsigned int> : public Scalar<Node::Number, NumberNode, unsigned int>
+    {
+    public:
+        Terminal(unsigned int& ref) : Scalar(ref)
+        {}
+
+        Terminal(unsigned int const& ref) : Scalar(ref)
+        {}
+    };
+
+    template <>
+    class Terminal<std::size_t> : public Scalar<Node::Number, NumberNode, std::size_t>
+    {
+    public:
+        Terminal(std::size_t& ref) : Scalar(ref)
+        {}
+
+        Terminal(std::size_t const& ref) : Scalar(ref)
+        {}
     };
     
     template <>
@@ -216,6 +504,20 @@ namespace lconf { namespace json
     {
     public:
         Terminal(float& ref) : Scalar(ref)
+        {}
+
+        Terminal(float const& ref) : Scalar(ref)
+        {}
+    };
+    
+    template <>
+    class Terminal<double> : public Scalar<Node::Number, NumberNode, double>
+    {
+    public:
+        Terminal(double& ref) : Scalar(ref)
+        {}
+
+        Terminal(double const& ref) : Scalar(ref)
         {}
     };
     
@@ -225,6 +527,9 @@ namespace lconf { namespace json
     public:
         Terminal(bool& ref) : Scalar(ref)
         {}
+
+        Terminal(bool const& ref) : Scalar(ref)
+        {}
     };
     
     template <>
@@ -233,6 +538,22 @@ namespace lconf { namespace json
     public:
         Terminal(std::string& ref) : Scalar(ref)
         {}
+
+        Terminal(std::string const& ref) : Scalar(ref)
+        {}
+    };
+
+    template <>
+    class Terminal<const char*> : public Scalar<Node::String, StringNode, std::string>
+    {
+    public:
+        Terminal(const char* ptr) :
+            Scalar(static_cast<std::string const&>(m_str)),
+            m_str(ptr)
+        {}
+
+    private:
+        std::string m_str;
     };
     
     template <typename T>
@@ -241,6 +562,9 @@ namespace lconf { namespace json
     public:
         Terminal(std::vector<T>& ref) : Vector<T>(ref)
         {}
+
+        Terminal(std::vector<T> const& ref) : Vector<T>(ref)
+        {}
     };
     
     template <typename T>
@@ -248,6 +572,41 @@ namespace lconf { namespace json
     {
     public:
         Terminal(std::map<std::string, T>& ref) : Map<T>(ref)
+        {}
+
+        Terminal(std::map<std::string, T> const& ref) : Map<T>(ref)
+        {}
+    };
+
+    template <typename T>
+    class Terminal<tag_as_pod_impl<T> > : public POD<T>
+    {
+    public:
+        Terminal(tag_as_pod_impl<T> ref) : POD<T>(ref.ref)
+        {}
+    };
+
+    template <typename T>
+    class Terminal<tag_as_const_pod_impl<T> > : public POD<T>
+    {
+    public:
+        Terminal(tag_as_const_pod_impl<T> ref) : POD<T>(ref.ref)
+        {}
+    };
+
+    template <typename T>
+    class Terminal<tag_as_raw_impl<T> > : public Raw<T>
+    {
+    public:
+        Terminal(tag_as_raw_impl<T> ref) : Raw<T>(ref.ptr, ref.size)
+        {}
+    };
+
+    template <typename T>
+    class Terminal<tag_as_const_raw_impl<T> > : public Raw<T>
+    {
+    public:
+        Terminal(tag_as_const_raw_impl<T> ref) : Raw<T>(ref.ptr, ref.size)
         {}
     };
     
@@ -262,6 +621,7 @@ namespace lconf { namespace json
         Type type() const;
         void extract(Node* node) const;
         Node* synthetize() const;
+        bool isConst() const;
         
     private:
         std::map<std::string, Element*> m_elements;
@@ -278,6 +638,7 @@ namespace lconf { namespace json
         Type type() const;
         void extract(Node* node) const;
         Node* synthetize() const;
+        bool isConst() const;
         
     private:
         std::vector<Element*> m_elements;
@@ -307,12 +668,25 @@ namespace lconf { namespace json
         Template(T& ref) :
             m_impl(0)
         { bind(ref); }
+
+        template <typename T>
+        Template(T const& const_ref) :
+            m_impl(0)
+        { bind(const_ref); }
         
         template <typename T>
         Template& bind(T& ref)
         {
             if (m_impl) throw std::logic_error("json::Template::bind: template is already bound");
             m_impl = new Terminal<T>(ref);
+            return *this;
+        }
+        
+        template <typename T>
+        Template& bind(T const& const_ref)
+        {
+            if (m_impl) throw std::logic_error("json::Template::bind: template is already bound");
+            m_impl = new Terminal<T>(const_ref);
             return *this;
         }
         
@@ -343,7 +717,8 @@ namespace lconf { namespace json
     {
     public:
         Scalar(std::vector<bool>::reference& ref) :
-            m_ref(new std::vector<bool>::reference(ref))
+            m_ref(new std::vector<bool>::reference(ref)),
+            m_is_const(false)
         {}
 
         ~Scalar()
@@ -354,6 +729,9 @@ namespace lconf { namespace json
         
         void extract(Node* node) const
         {
+            if (m_is_const)
+                throw Exception(node, "json::Scalar[const]::extract: extracting to const binding");
+
             if (node->type() != tp)
                 throw Exception(node, "json::Scalar::extract: expecting a node of type " + Node::typeName(tp));
             *m_ref = node->downcast<N>()->value();
@@ -361,9 +739,13 @@ namespace lconf { namespace json
         
         Node* synthetize() const
         { return new N(*m_ref); }
+
+        bool isConst() const
+        { return m_is_const; }
         
     protected:
         std::vector<bool>::reference* m_ref;
+        bool m_is_const;
     };
     
     template <>
@@ -380,7 +762,13 @@ namespace lconf { namespace json
     {
     public:
         Vector(std::vector<bool>& ref) :
-            m_ref(ref)
+            m_ref(ref),
+            m_is_const(false)
+        {}
+
+        Vector(std::vector<bool> const& ref) :
+            m_ref(const_cast<std::vector<bool>&>(ref)),
+            m_is_const(true)
         {}
         
         Type type() const
@@ -388,6 +776,9 @@ namespace lconf { namespace json
         
         void extract(Node* node) const
         {
+            if (m_is_const)
+                throw Exception(node, "json::Vector[const]::extract: extracting to const binding");
+
             if (node->type() != Node::Array)
                 throw Exception(node, "json::Vector::extract: expecting an array node");
             
@@ -414,9 +805,13 @@ namespace lconf { namespace json
             }
             return arr;
         }
+
+        bool isConst() const
+        { return m_is_const; }
         
     private:
         std::vector<bool>& m_ref;
+        bool m_is_const;
     };
 } }
 

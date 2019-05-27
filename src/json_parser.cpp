@@ -55,7 +55,15 @@ Node* Parser::M_atom()
     else if (next.type() == Token::Number)
     {
         m_lex.get();
-        return new NumberNode(std::stof(next.value()));
+        
+        float value;
+        try {
+            value = std::stof(next.value());
+        } catch (std::exception const&) {
+            value = 0.0f;
+        }
+
+        return new NumberNode(value);
     }
     else if (next.type() == Token::String)
     {

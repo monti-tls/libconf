@@ -39,11 +39,20 @@ namespace lconf { namespace json
     {
     public:
         PairElement(std::pair<U, V>& ref) :
-            m_ref(ref)
+            m_ref(ref),
+            m_is_const(false)
+        {}
+
+        PairElement(std::pair<U, V> const& ref) :
+            m_ref(const_cast<std::pair<U, V>&>(ref)),
+            m_is_const(true)
         {}
 
         void extract(Node* node) const
         {
+            if (m_is_const)
+                throw Exception(node, "json::PairElement[const]::extract: extracting to const binding");
+
             // Type-check the array, throwing a json::Exception instance in case
             //   of a mismatch.
             if (node->type() != Node::Array)
@@ -70,8 +79,12 @@ namespace lconf { namespace json
             return tpl.synthetize();
         }
 
+        bool isConst() const
+        { return m_is_const; }
+
     private:
         std::pair<U, V>& m_ref;
+        bool m_is_const;
     };
 
     //! Specialize the Terminal<> class to expose the new type to the json::Template
@@ -81,6 +94,9 @@ namespace lconf { namespace json
     {
     public:
         Terminal(std::pair<U, V>& ref) : PairElement<U, V>(ref)
+        {}
+
+        Terminal(std::pair<U, V> const& ref) : PairElement<U, V>(ref)
         {}
     };
 } }
@@ -142,6 +158,122 @@ int main()
         std::cout << std::endl << "Compact version : ";
         json::synthetize(tpl, std::cout, false);
         std::cout << std::endl;
+    }
+    catch(Exception const& exc)
+    {
+        // Here you can retrieve the offending node :
+        Node* offending = exc.node();
+        std::cerr << "Exception:[" << offending << "]\n\t" << exc.what() << std::endl;
+    }
+    catch(std::exception const& exc)
+    {
+        std::cerr << "Exception:\n\t" << exc.what() << std::endl;
+    }
+
+    // Testing the const versions
+
+    try
+    {
+        struct {
+            int a;
+            float b;
+            std::pair<int, std::string> p;
+            std::vector<bool> v;
+            const char* c;
+        } const test = {
+            .a = 123,
+            .b = 456.759f,
+            .p = { 12, "42--C−C" },
+            .v = { true, false, true },
+            .c = "this is a C string"
+        };
+
+        // Create the template.
+        Template tpl = Template()
+        .bind("a", test.a)
+        .bind("b", test.b)
+        .bind("p", test.p)
+        .bind("v", test.v)
+        .bind("s", test.c);
+
+        // Serialize the template, now the values must have changed
+        std::cout << "Serialized (indented version) :" << std::endl;
+        json::synthetize(tpl, std::cout);
+        std::cout << std::endl << "Compact version : ";
+        json::synthetize(tpl, std::cout, false);
+        std::cout << std::endl;
+    }
+    catch(Exception const& exc)
+    {
+        // Here you can retrieve the offending node :
+        Node* offending = exc.node();
+        std::cerr << "Exception:[" << offending << "]\n\t" << exc.what() << std::endl;
+    }
+    catch(std::exception const& exc)
+    {
+        std::cerr << "Exception:\n\t" << exc.what() << std::endl;
+    }
+
+    // PODs
+
+    try
+    {
+        struct __attribute__((packed))
+        {
+            int a;
+            char b[8];
+        } const not_really_a_pod[2] = {
+            { 123, "abcd" },
+            { 456, "efgh" }
+        };
+
+        Template tpl = Template()
+        .bind("data", ref_as_pod(not_really_a_pod));
+
+        std::cout << "Serialized (indented version) :" << std::endl;
+        json::synthetize(tpl, std::cout);
+    }
+    catch(Exception const& exc)
+    {
+        // Here you can retrieve the offending node :
+        Node* offending = exc.node();
+        std::cerr << "Exception:[" << offending << "]\n\t" << exc.what() << std::endl;
+    }
+    catch(std::exception const& exc)
+    {
+        std::cerr << "Exception:\n\t" << exc.what() << std::endl;
+    }
+
+    // PODs
+
+    try
+    {
+        unsigned short raw[4] = { 1, 2, 3, 4 };
+
+        Template tpl = Template()
+        .bind("data", ref_as_raw(raw, 4));
+
+        std::cout << "Serialized (indented version) :" << std::endl;
+        json::synthetize(tpl, std::cout);
+
+        unsigned short* raw2 = 0;
+        std::size_t sz;
+
+        Template tpl2 = Template()
+        .bind("data", ref_as_raw(raw2, sz));
+
+        std::istringstream ss("{ \"data\" : \"0400050006000700\" }");
+        json::extract(tpl2, ss);
+
+        std::cout << "Read " << sz << " items:";
+        for (std::size_t i = 0; i < sz; ++i)
+            std::cout << " " << raw2[i];;
+        std::cout << std::endl;
+
+        std::cout << "Serialized (indented version) :" << std::endl;
+        json::synthetize(tpl2, std::cout);
+
+        delete[] raw2;
     }
     catch(Exception const& exc)
     {

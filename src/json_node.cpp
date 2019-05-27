@@ -175,7 +175,7 @@ void ObjectNode::M_serialize(std::ostream& out, int level, bool indent) const
     for (it = m_impl.begin(); it != m_impl.end(); ++it)
     {
         if (indent) out << pre << "    ";
-        out << '"' << it->first << "\" : ";
+        out << '"' << it->first << "\": ";
         
         if (indent && it->second->M_multiline())
         {

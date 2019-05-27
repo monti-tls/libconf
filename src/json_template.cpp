@@ -89,6 +89,9 @@ Node* Object::synthetize() const
     return obj;
 }
 
+bool Object::isConst() const
+{ return false; }
+
 Array::Array()
 {}
 
@@ -134,6 +137,9 @@ Node* Array::synthetize() const
     }
     return arr;
 }
+
+bool Array::isConst() const
+{ return false; }
 
 Template::Template() :
     m_impl(0)

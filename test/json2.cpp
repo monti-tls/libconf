@@ -1,6 +1,6 @@
 /* This file is part of libconf.
  *
- * Copyright (c) 2015, Alexandre Monti
+ * Copyright (c) 2015 - 2019, Alexandre Monti
  *
  * libconf is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

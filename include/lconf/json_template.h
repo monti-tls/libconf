@@ -25,6 +25,7 @@
 #include <map>
 #include <sstream>
 #include <iomanip>
+#include <cstdint>
 
 namespace lconf { namespace json
 {
@@ -467,35 +468,46 @@ namespace lconf { namespace json
     //!   (see beginning of this file).
     
     template <>
-    class Terminal<int> : public Scalar<Node::Number, NumberNode, int>
+    class Terminal<int32_t> : public Scalar<Node::Number, NumberNode, int32_t>
     {
     public:
-        Terminal(int& ref) : Scalar(ref)
+        Terminal(int32_t& ref) : Scalar(ref)
         {}
 
-        Terminal(int const& ref) : Scalar(ref)
+        Terminal(int32_t const& ref) : Scalar(ref)
         {}
     };
 
     template <>
-    class Terminal<unsigned int> : public Scalar<Node::Number, NumberNode, unsigned int>
+    class Terminal<uint32_t> : public Scalar<Node::Number, NumberNode, uint32_t>
     {
     public:
-        Terminal(unsigned int& ref) : Scalar(ref)
+        Terminal(uint32_t& ref) : Scalar(ref)
         {}
 
-        Terminal(unsigned int const& ref) : Scalar(ref)
+        Terminal(uint32_t const& ref) : Scalar(ref)
         {}
     };
 
     template <>
-    class Terminal<std::size_t> : public Scalar<Node::Number, NumberNode, std::size_t>
+    class Terminal<int64_t> : public Scalar<Node::Number, NumberNode, int64_t>
     {
     public:
-        Terminal(std::size_t& ref) : Scalar(ref)
+        Terminal(int64_t& ref) : Scalar(ref)
         {}
 
-        Terminal(std::size_t const& ref) : Scalar(ref)
+        Terminal(int64_t const& ref) : Scalar(ref)
+        {}
+    };
+
+    template <>
+    class Terminal<uint64_t> : public Scalar<Node::Number, NumberNode, uint64_t>
+    {
+    public:
+        Terminal(uint64_t& ref) : Scalar(ref)
+        {}
+
+        Terminal(uint64_t const& ref) : Scalar(ref)
         {}
     };
     
